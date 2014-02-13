@@ -2,7 +2,7 @@ Package: com.insanj.closeall
 Name: CloseAll
 Pre-Depends: firmware (>= 7.0)
 Depends: mobilesubstrate
-Version: 0.1
+Version: 1.0
 Architecture: iphoneos-arm
 Description: Close all tabs in Safari.
  Hold on any individual close tab button (X) in Safari to close all tabs.
