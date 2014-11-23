@@ -1,5 +1,4 @@
 #import <UIKit/UIKit.h>
-#import <Foundation/NSDistributedNotificationCenter.h>
 #import "substrate.h"
 
 #ifdef DEBUG
@@ -18,21 +17,25 @@
 
 @end
 
-@interface TiltedTabView : UIView <UIScrollViewDelegate>
-
-- (BOOL)_gestureRecognizer:(UIPanGestureRecognizer *)arg1 shouldInteractWithItem:(id)arg2;
-
-@end
-
 @interface TabController : NSObject
 
+- (void)tiltedTabViewDidPresent:(id)arg1; // TiltedTabView
+- (void)tiltedTabViewDidDismiss:(id)arg1;
+
+// - (id)init
+// - (id)initWithBrowserController
+
+// ios 7
 - (void)closeAllOpenTabsAnimated:(BOOL)arg1;
+
+// ios 8
+- (void)closeAllOpenTabsAnimated:(BOOL)arg1 exitTabView:(id)arg2;
 
 @end
 
 @interface TabController (CloseAll)
 
-- (void)closeAll_promptCloseAllTabs;
+- (void)closeAll_promptCloseAllTabs:(NSNotification *)notification;
 
 @end
 

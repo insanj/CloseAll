@@ -1,6 +1,6 @@
 # CloseAll
 
-Close all tabs in Safari. Hold on any tab's close button (X), or tug it to the right, to close all tabs.
+Close all tabs in Safari. Hold on any tab's close button (X) to close all of them.
 
 ## [License](LICENSE.md)
 

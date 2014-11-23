@@ -1,77 +1,45 @@
 #import "CloseAll.h"
 
 static NSString *kCloseAllNotificationName = @"CloseAll.Notification";
-static CAAlertView *closeAllAlertView;
 
 %hook DimmingButton
 
-- (id)initWithFrame:(CGRect)frame{
-	DimmingButton *button = (DimmingButton *) %orig();
+- (id)initWithFrame:(CGRect)frame {
+	DimmingButton *dimmingButton = (DimmingButton *) %orig();
 
-	UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:button action:@selector(closeAll_longPressRecognized:)];
-	[button addGestureRecognizer:longPress];
+	UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:dimmingButton action:@selector(closeAll_longPressRecognized:)];
+	[dimmingButton addGestureRecognizer:longPress];
 	[longPress release];
 
-	return button;
+	return dimmingButton;
 }
 
 %new - (void)closeAll_longPressRecognized:(UILongPressGestureRecognizer *)sender {
 	if (sender.state == UIGestureRecognizerStateBegan) {
 		CALOG(@"Detected long-press on close button, sending notification to close all tabs...");
-		[[NSDistributedNotificationCenter defaultCenter] postNotificationName:kCloseAllNotificationName object:nil];
+		[[NSNotificationCenter defaultCenter] postNotificationName:kCloseAllNotificationName object:nil];
 	}
-}
-
-%end
-
-%hook TiltedTabView
-
-- (BOOL)_gestureRecognizer:(UIPanGestureRecognizer *)arg1 shouldInteractWithItem:(id)arg2 {
-	CGFloat xOffset = [arg1 locationInView:arg1.view].x;
-	NSMutableArray *targets = MSHookIvar<NSMutableArray *>(arg1, "_targets");
-	NSString *actionString = NSStringFromSelector(MSHookIvar<SEL>(targets[0], "_action"));
-
-	if ([actionString isEqualToString:@"_tabCloseRecognized:"] && xOffset < arg1.view.frame.size.width / 4.0 && xOffset > arg1.view.frame.size.width / 8.0) {
-		CALOG(@"Detected right gesture on tab view, sending notification to close all tabs...");
-		[[NSDistributedNotificationCenter defaultCenter] postNotificationName:kCloseAllNotificationName object:nil];
-	}
-
-	return %orig();
 }
 
 %end
 
 %hook TabController
 
-- (id)init {
-	TabController *controller = (TabController *) %orig();
-	[[NSDistributedNotificationCenter defaultCenter] addObserver:controller selector:@selector(closeAll_promptCloseAllTabs) name:kCloseAllNotificationName object:nil];
-	return controller;
+- (void)tiltedTabViewDidPresent:(id)arg1 {
+	%orig(arg1);
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(closeAll_promptCloseAllTabs:) name:kCloseAllNotificationName object:nil];
 }
 
-%new -(void)closeAll_promptCloseAllTabs {
+-(void)tiltedTabViewDidDismiss:(id)arg1 {
+	%orig(arg1);
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:kCloseAllNotificationName object:nil];
+}
+
+%new - (void)closeAll_promptCloseAllTabs:(NSNotification *)notification {
 	CALOG(@"Caught notification to close all tabs, prompting user and slinking away");
-
-	if (closeAllAlertView.visible) {
-		[closeAllAlertView dismissWithClickedButtonIndex:closeAllAlertView.cancelButtonIndex animated:NO];
-	}
-
-	else if (!closeAllAlertView.safariTabController) {
-		closeAllAlertView.safariTabController = self;
-		[closeAllAlertView show];
-	}
-
-	else {
-		closeAllAlertView = [[CAAlertView alloc] initWithTabController:self];
-		[closeAllAlertView show];
-	}
+	CAAlertView *closeAllAlertView = [[[CAAlertView alloc] initWithTabController:self] autorelease];
+	[closeAllAlertView show];
 }
-
-- (void)dealloc {
-	[[NSDistributedNotificationCenter defaultCenter] removeObserver:self name:kCloseAllNotificationName object:nil];
-	%orig();
-}
-
 %end
 
 @implementation CAAlertView
@@ -88,7 +56,13 @@ static CAAlertView *closeAllAlertView;
 
 - (void)dismissWithClickedButtonIndex:(NSInteger)buttonIndex animated:(BOOL)animated {
 	if (buttonIndex != [self cancelButtonIndex]) {
-		[self.safariTabController closeAllOpenTabsAnimated:YES];
+		if ([self.safariTabController respondsToSelector:@selector(closeAllOpenTabsAnimated:)]) {
+			[self.safariTabController closeAllOpenTabsAnimated:YES];
+		}
+
+		else {
+			[self.safariTabController closeAllOpenTabsAnimated:YES exitTabView:[%c(TiltedTabView) new]];
+		}
 	}
 
 	[super dismissWithClickedButtonIndex:buttonIndex animated:animated];

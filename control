@@ -5,7 +5,7 @@ Depends: mobilesubstrate
 Version: 1.1
 Architecture: iphoneos-arm
 Description: Close all tabs in Safari.
- Hold on any tab's close button (X), or tug it to the right, to close all tabs.
+ Hold on any tab's close button (X) to close all of them.
 Maintainer: Julian Weiss <insanjmail@gmail.com>
 Author: Julian (insanj) Weiss
 Section: Tweaks
