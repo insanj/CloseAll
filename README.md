@@ -19,3 +19,4 @@ Close all tabs in Safari. Hold on any tab's close button (X) to close all of the
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    

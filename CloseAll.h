@@ -19,16 +19,15 @@
 
 @interface TabController : NSObject
 
-- (void)tiltedTabViewDidPresent:(id)arg1; // TiltedTabView
-- (void)tiltedTabViewDidDismiss:(id)arg1;
-
-// - (id)init
-// - (id)initWithBrowserController
+// - (void)tiltedTabViewDidPresent:(id)arg1; // TiltedTabView
+// - (void)tiltedTabViewDidDismiss:(id)arg1;
 
 // ios 7
+- (id)init;
 - (void)closeAllOpenTabsAnimated:(BOOL)arg1;
 
 // ios 8
+- (id)initWithBrowserController:(id)arg1;
 - (void)closeAllOpenTabsAnimated:(BOOL)arg1 exitTabView:(id)arg2;
 
 @end
@@ -39,7 +38,7 @@
 
 @end
 
-@interface CAAlertView : UIAlertView
+@interface CAAlertView : UIAlertView <UIAlertViewDelegate>
 
 @property (strong, nonatomic) TabController *safariTabController;
 

@@ -16,7 +16,7 @@ static NSString *kCloseAllNotificationName = @"CloseAll.Notification";
 
 %new - (void)closeAll_longPressRecognized:(UILongPressGestureRecognizer *)sender {
 	if (sender.state == UIGestureRecognizerStateBegan) {
-		CALOG(@"Detected long-press on close button, sending notification to close all tabs...");
+		CALOG(@"Detected long-press on close button, sending notification to prompt user...");
 		[[NSNotificationCenter defaultCenter] postNotificationName:kCloseAllNotificationName object:nil];
 	}
 }
@@ -25,14 +25,23 @@ static NSString *kCloseAllNotificationName = @"CloseAll.Notification";
 
 %hook TabController
 
-- (void)tiltedTabViewDidPresent:(id)arg1 {
-	%orig(arg1);
-	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(closeAll_promptCloseAllTabs:) name:kCloseAllNotificationName object:nil];
+// iOS 7
+- (id)init {
+	TabController *tabController = (TabController *) %orig();
+	[[NSNotificationCenter defaultCenter] addObserver:tabController selector:@selector(closeAll_promptCloseAllTabs:) name:kCloseAllNotificationName object:nil];
+	return tabController;
 }
 
--(void)tiltedTabViewDidDismiss:(id)arg1 {
-	%orig(arg1);
+// iOS 8
+- (id)initWithBrowserController:(id)arg1 {
+	TabController *tabController = (TabController *) %orig(arg1);
+	[[NSNotificationCenter defaultCenter] addObserver:tabController selector:@selector(closeAll_promptCloseAllTabs:) name:kCloseAllNotificationName object:nil];
+	return tabController;
+}
+
+- (void)dealloc {
 	[[NSNotificationCenter defaultCenter] removeObserver:self name:kCloseAllNotificationName object:nil];
+	%orig();
 }
 
 %new - (void)closeAll_promptCloseAllTabs:(NSNotification *)notification {
@@ -40,22 +49,25 @@ static NSString *kCloseAllNotificationName = @"CloseAll.Notification";
 	CAAlertView *closeAllAlertView = [[[CAAlertView alloc] initWithTabController:self] autorelease];
 	[closeAllAlertView show];
 }
+
 %end
 
 @implementation CAAlertView
 
 - (instancetype)initWithTabController:(TabController *)tabController {
-	self = [super initWithTitle:@"CloseAll" message:@"Are you sure you'd like to close all open tabs?" delegate:nil cancelButtonTitle:@"No" otherButtonTitles:@"Yes", nil];
+	self = [super initWithTitle:@"CloseAll" message:@"Are you sure you'd like to close all open tabs?" delegate:self cancelButtonTitle:@"No" otherButtonTitles:@"Yes", nil];
 
 	if (self) {
 		self.safariTabController = tabController;
+		CALOG(@"Created new alert view with TabController: %@", self.safariTabController);
 	}
 
 	return self;
 }
 
-- (void)dismissWithClickedButtonIndex:(NSInteger)buttonIndex animated:(BOOL)animated {
-	if (buttonIndex != [self cancelButtonIndex]) {
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
+	CALOG(@"Heard clicked button on %@ at index %i", alertView, (int)buttonIndex);
+	if (buttonIndex != [alertView cancelButtonIndex]) {
 		if ([self.safariTabController respondsToSelector:@selector(closeAllOpenTabsAnimated:)]) {
 			[self.safariTabController closeAllOpenTabsAnimated:YES];
 		}
@@ -64,8 +76,6 @@ static NSString *kCloseAllNotificationName = @"CloseAll.Notification";
 			[self.safariTabController closeAllOpenTabsAnimated:YES exitTabView:[%c(TiltedTabView) new]];
 		}
 	}
-
-	[super dismissWithClickedButtonIndex:buttonIndex animated:animated];
 }
 
 @end
